@@ -1,3 +1,3 @@
 """Pacote ETL da Verdejar."""
 
-__all__ = ["extracao"]
+__all__ = ["extracao", "transformacao"]
