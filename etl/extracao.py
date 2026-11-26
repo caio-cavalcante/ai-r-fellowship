@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import json
+import math
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
@@ -20,6 +21,13 @@ class ErroExtracao(Exception):
 def verificar_saude_api(base_url: str, timeout: float = 5.0) -> bool:
     """Verifica se o endpoint /saude da API esta acessivel e retorna status ok."""
     if not isinstance(base_url, str) or not base_url.strip():
+        return False
+    if (
+        isinstance(timeout, bool)
+        or not isinstance(timeout, (int, float))
+        or not math.isfinite(timeout)
+        or timeout <= 0
+    ):
         return False
 
     url = f"{base_url.strip().rstrip('/')}/saude"
@@ -47,6 +55,13 @@ def extrair_recurso_paginado(
         raise ErroExtracao("Rota da API invalida ou vazia.")
     if not isinstance(page_size, int) or isinstance(page_size, bool) or page_size < 1:
         raise ErroExtracao(f"page_size invalido ({page_size!r}): deve ser inteiro >= 1.")
+    if (
+        isinstance(timeout, bool)
+        or not isinstance(timeout, (int, float))
+        or not math.isfinite(timeout)
+        or timeout <= 0
+    ):
+        raise ErroExtracao("timeout deve ser um numero positivo finito.")
 
     rota_limpa = rota.strip().strip("/")
     url = f"{base_url.strip().rstrip('/')}/{rota_limpa}"
@@ -145,12 +160,20 @@ def ler_produtos_csv(caminho_csv: str | Path) -> list[dict[str, Any]]:
                 )
 
             for indice_linha, linha in enumerate(leitor, start=2):
+                if None in linha:
+                    raise ErroExtracao(
+                        f"Colunas extras inesperadas na linha {indice_linha} de {caminho}."
+                    )
                 if any(linha.get(col) is None for col in COLUNAS_PRODUTOS_OBRIGATORIAS):
                     raise ErroExtracao(
                         f"Coluna ausente na linha {indice_linha} de {caminho}."
                     )
 
                 produto_id = int(str(linha["produto_id"]).strip())
+                if produto_id <= 0:
+                    raise ErroExtracao(
+                        f"produto_id deve ser positivo na linha {indice_linha} de {caminho}."
+                    )
                 nome = str(linha["nome"]).strip()
                 categoria = str(linha["categoria"]).strip()
                 if not nome or not categoria:
@@ -160,6 +183,10 @@ def ler_produtos_csv(caminho_csv: str | Path) -> list[dict[str, Any]]:
                 preco_base = Decimal(str(linha["preco_base"]).strip()).quantize(
                     Decimal("0.01")
                 )
+                if not preco_base.is_finite() or preco_base <= 0:
+                    raise ErroExtracao(
+                        f"preco_base deve ser finito e positivo na linha {indice_linha} de {caminho}."
+                    )
 
                 produtos.append(
                     {
