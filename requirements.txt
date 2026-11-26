@@ -1,0 +1,4 @@
+psycopg2-binary==2.9.13
+requests==2.34.2
+pytest==9.2.0
+python-dotenv==1.2.4

@@ -1,0 +1,12 @@
+.env
+brutos/
+AGENTS.md
+.agents/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+ROTEIRO_DEFESA_ORAL.md
+\[AIR\] DesafioFinal.pdf
+insumos_verdejar/
+temp.md
